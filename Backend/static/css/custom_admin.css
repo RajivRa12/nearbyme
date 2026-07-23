@@ -1,0 +1,8 @@
+a, .breadcrumb-item a {
+    color: #000000 !important;
+}
+.btn-primary {
+    background-color: #000000 !important;
+    border-color: #000000 !important;
+    color: #ffffff !important;
+}
