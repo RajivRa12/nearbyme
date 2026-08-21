@@ -3,6 +3,7 @@ import { View, Text, Switch } from "react-native";
 import tw from "twrnc";
 import { MobileShell } from "../../components/MobileShell";
 import { PageHeader } from "../../components/primitives";
+import { color, shadow } from "../../lib/theme";
 
 const notifOptions = [
   { key: "reminders", label: "Appointment reminders" },
@@ -43,7 +44,7 @@ export default function Preferences() {
             >
               <Text style={tw`text-sm font-semibold text-zinc-800`}>{o.label}</Text>
               <Switch
-                trackColor={{ false: "#e4e4e7", true: "#5c6f59" }}
+                trackColor={{ false: color.line, true: color.sage }}
                 thumbColor="white"
                 ios_backgroundColor="#e4e4e7"
                 value={state[o.key]}
@@ -90,11 +91,11 @@ export default function Preferences() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={tw`mt-4`}>
-      <Text style={tw`mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-[#5c6f59]`}>
+    <View style={tw`gap-2`}>
+      <Text style={[tw`px-1 text-[11px] font-semibold uppercase tracking-widest`, { color: color.sage }]}>
         {title}
       </Text>
-      <View style={tw`overflow-hidden rounded-2xl bg-stone-100/60 border border-stone-200/30`}>
+      <View style={{ ...tw`overflow-hidden rounded-3xl bg-white border border-stone-100`, ...shadow.xs }}>
         {children}
       </View>
     </View>

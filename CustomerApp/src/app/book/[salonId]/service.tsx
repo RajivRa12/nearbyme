@@ -4,9 +4,10 @@ import { Home, Store } from "lucide-react-native";
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import tw from "twrnc";
 import { BookingStepper } from "../../../components/BookingStepper";
-import { PrimaryButton, StickyBottomBar } from "../../../components/primitives";
+import { PrimaryButton, StickyBottomBar, EmptyState } from "../../../components/primitives";
 import { setDraft, useDraft } from "../../../lib/bookingState";
 import { useQuery } from "../../../hooks/useFetch";
+import { color } from "../../../lib/theme";
 
 const HOME_SURCHARGE = 15;
 
@@ -15,9 +16,8 @@ export default function ChooseService() {
   const draft = useDraft();
   const mode = draft.mode ?? "salon";
   
-  const { data: menuObj, isLoading } = useQuery<any>(`/api/customer/stores/${salonId}/menu/`);
-  const categories = menuObj?.data || [];
-  const allServices = categories.flatMap((c: any) => c.services);
+  const { data: menuObj, isLoading } = useQuery<any>(`/api/customer/stores/${salonId}/phase1-menu/`);
+  const allServices = menuObj?.data || [];
 
   useEffect(() => {
     setDraft({ salonId: salonId as string, mode: draft.mode ?? "salon" });
@@ -37,7 +37,7 @@ export default function ChooseService() {
               style={tw`flex-1 flex-row items-center justify-center gap-2 rounded-2xl h-12 border ${mode === "salon" ? "bg-[#5c6f59] border-[#5c6f59]" : "bg-stone-100 border-stone-200/20"
                 }`}
             >
-              <Store size={16} color={mode === "salon" ? "white" : "#3f3f46"} strokeWidth={1.6} />
+              <Store size={16} color={mode === "salon" ? "white" : color.ink2} strokeWidth={1.6} />
               <Text style={tw`text-sm font-semibold ${mode === "salon" ? "text-white" : "text-zinc-700"}`}>
                 In-salon
               </Text>
@@ -49,7 +49,7 @@ export default function ChooseService() {
                 }`}
             >
               <View style={tw`flex-row items-center gap-2`}>
-                <Home size={16} color={mode === "home" ? "white" : "#3f3f46"} strokeWidth={1.6} />
+                <Home size={16} color={mode === "home" ? "white" : color.ink2} strokeWidth={1.6} />
                 <Text style={tw`text-sm font-semibold ${mode === "home" ? "text-white" : "text-zinc-700"}`}>
                   At home
                 </Text>
@@ -63,12 +63,10 @@ export default function ChooseService() {
 
         {/* Services List */}
         <View style={tw`gap-2`}>
-          {isLoading && <ActivityIndicator size="large" color="#5c6f59" />}
-          
+          {isLoading && <ActivityIndicator size="large" color={color.sage} />}
+
           {!isLoading && allServices.length === 0 && (
-            <View style={tw`py-12 items-center`}>
-              <Text style={tw`text-sm text-zinc-500`}>No services found.</Text>
-            </View>
+            <EmptyState title="No services found" subtitle="This salon hasn't listed any services yet." />
           )}
 
           {!isLoading && allServices.map((s: any) => {
@@ -76,7 +74,7 @@ export default function ChooseService() {
             return (
               <TouchableOpacity
                 key={s.id}
-                onPress={() => setDraft({ serviceId: s.id, serviceName: s.name, servicePrice: s.price })}
+                onPress={() => setDraft({ serviceId: s.id, serviceName: s.name, servicePrice: s.default_price_paise / 100, depositPercentage: s.deposit_percentage, durationMin: s.duration_min })}
                 style={tw`flex-row items-center justify-between rounded-2xl p-4 border ${isSelected
                     ? "bg-[#5c6f59] border-[#5c6f59]"
                     : "bg-stone-100/60 border-stone-200/30"
@@ -93,14 +91,14 @@ export default function ChooseService() {
                     style={tw`text-xs mt-0.5 ${isSelected ? "text-white/80" : "text-zinc-500"
                       }`}
                   >
-                    {s.duration_minutes} min
+                    {s.duration_min} min
                   </Text>
                 </View>
                 <Text
                   style={tw`text-sm font-semibold ${isSelected ? "text-white" : "text-zinc-800"
                     }`}
                 >
-                  ₹{s.price}
+                  ₹{s.default_price_paise / 100}
                 </Text>
               </TouchableOpacity>
             );
@@ -111,7 +109,7 @@ export default function ChooseService() {
       <StickyBottomBar>
         <PrimaryButton
           disabled={!draft.serviceId}
-          onPress={() => router.push({ pathname: "/book/[salonId]/therapist", params: { salonId } })}
+          onClick={() => router.push({ pathname: "/book/[salonId]/therapist", params: { salonId } })}
         >
           {draft.serviceId ? "Continue" : "Select a service"}
         </PrimaryButton>

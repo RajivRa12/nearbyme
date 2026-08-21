@@ -1,19 +1,19 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Invoice, InvoiceStatus
-
-@receiver(pre_save, sender=Invoice)
-def auto_accrue_loyalty_points(sender, instance, **kwargs):
-    if not instance.pk:
-        return  # New invoice being created — nothing to compare against
-    try:
-        old_invoice = Invoice.objects.get(pk=instance.pk)
-    except Invoice.DoesNotExist:
-        return  # Invoice doesn't exist in DB yet (e.g. pk was set manually before save)
-    
-    if old_invoice.status != InvoiceStatus.PAID and instance.status == InvoiceStatus.PAID:
-        if instance.customer:
-            points_to_award = int(instance.grand_total / 100)
-            if points_to_award > 0:
-                instance.customer.loyalty_points += points_to_award
-                instance.customer.save(update_fields=['loyalty_points'])
+from django.utils.text import slugify
+from .models import Store, StorePublicProfile
+@receiver(post_save, sender=Store)
+def create_store_public_profile(sender, instance, created, **kwargs):
+    """Every store gets a microsite the moment it exists — legacy Store has
+    no separate approval gate (StoreStatus defaults to ACTIVE on creation),
+    so 'the moment it's approved' is 'the moment it's created' here. See
+    customer-app-build-guide.pdf section 2."""
+    if not created or hasattr(instance, 'public_profile'):
+        return
+    base_slug = slugify(instance.name) or f"store-{instance.id}"
+    slug = base_slug
+    suffix = 2
+    while StorePublicProfile.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{suffix}"
+        suffix += 1
+    StorePublicProfile.objects.create(store=instance, slug=slug)

@@ -1,16 +1,20 @@
-import { View, Text } from "react-native";
+import { CreditCard } from "lucide-react-native";
+import { View } from "react-native";
 import tw from "twrnc";
 import { MobileShell } from "../../components/MobileShell";
-import { PageHeader } from "../../components/primitives";
+import { PageHeader, EmptyState } from "../../components/primitives";
+import { color } from "../../lib/theme";
 
 export default function Payments() {
   return (
     <MobileShell showHeader={false} scroll={true}>
       <PageHeader title="Saved payment methods" />
-      <View style={tw`gap-y-5 px-5 pb-8`}>
-        <View style={tw`py-12 items-center`}>
-          <Text style={tw`text-sm text-zinc-500`}>No payment methods saved.</Text>
-        </View>
+      <View style={tw`px-5 pb-8 pt-2`}>
+        <EmptyState
+          icon={<CreditCard size={26} color={color.ink3} strokeWidth={1.5} />}
+          title="No payment methods saved"
+          subtitle="Add a card at checkout to save it here for next time."
+        />
       </View>
     </MobileShell>
   );

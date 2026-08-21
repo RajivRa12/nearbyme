@@ -4,16 +4,33 @@ import { useSyncExternalStore } from "react";
 type Draft = {
   salonId: string;
   serviceId?: string;
-  therapistId?: string;
+  serviceName?: string;
+  servicePrice?: number;
+  depositPercentage?: number;
+  durationMin?: number;
+  professionalId?: string;
+  professionalName?: string;
   roomId?: string;
-  when?: string;
+  roomName?: string;
   date?: string;
   startTime?: string;
+  endTime?: string;
+  when?: string;
   mode?: "salon" | "home";
-  addressId?: string;
+  serviceAddress?: string;
+  // Slot hold (see customer-app-build-guide.pdf section 6) — a session-scoped
+  // reservation created the moment a time is picked, so the slot can't be
+  // taken by someone else while this guest finishes OTP + payment.
+  sessionToken?: string;
+  holdId?: string;
+  holdExpiresAt?: string;
 };
 
-let state: Draft = { salonId: "" };
+function genSessionToken() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+let state: Draft = { salonId: "", sessionToken: genSessionToken() };
 const listeners = new Set<() => void>();
 
 export function setDraft(next: Partial<Draft>) {
@@ -22,7 +39,7 @@ export function setDraft(next: Partial<Draft>) {
 }
 
 export function resetDraft(salonId: string) {
-  state = { salonId };
+  state = { salonId, sessionToken: genSessionToken() };
   listeners.forEach((l) => l());
 }
 
@@ -36,17 +53,6 @@ export function useDraft(): Draft {
     () => state,
   );
 }
-
-export const rooms = [
-  { id: "r1", name: "Studio One", note: "Ground floor · natural light" },
-  { id: "r2", name: "Studio Two", note: "Quiet corner · candle-lit" },
-  { id: "r3", name: "Suite Blanc", note: "Private suite with shower" },
-];
-
-export const timeSlots = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "13:00", "13:30", "14:00", "14:30", "15:00", "16:00", "16:30", "17:30", "18:00",
-];
 
 export const dates = Array.from({ length: 7 }).map((_, i) => {
   const d = new Date();

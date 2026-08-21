@@ -1,83 +1,79 @@
 import { useState } from "react";
-import { Link } from "expo-router";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { CalendarX } from "lucide-react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import tw from "twrnc";
 import { MobileShell } from "../../components/MobileShell";
-import { Chip } from "../../components/primitives";
+import { Chip, SegmentedControl, EmptyState, Card } from "../../components/primitives";
 import { useQuery } from "../../hooks/useFetch";
+import { toArray, formatINR, formatSlotDate, formatSlotTime } from "../../lib/api";
+import { color } from "../../lib/theme";
+
+const UPCOMING_STATUSES = ["draft", "confirmed", "in_service"];
+const PAST_STATUSES = ["completed", "cancelled", "no_show"];
 
 export default function Bookings() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
-  const { data: aptsObj, isLoading } = useQuery<any>('/api/customer/appointments/');
+  const { data, isLoading } = useQuery<any>('/api/customer/bookings/');
 
   if (isLoading) {
     return (
       <MobileShell showHeader={true} scroll={false}>
         <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color="#5c6f59" />
+          <ActivityIndicator size="large" color={color.sage} />
         </View>
       </MobileShell>
     );
   }
 
-  const bookings = aptsObj?.results || (Array.isArray(aptsObj) ? aptsObj : []);
-
-  const upcoming = bookings.filter((b: any) => b.status === "UPCOMING" || b.status === "PENDING");
-  const past = bookings.filter((b: any) => b.status === "COMPLETED" || b.status === "CANCELLED");
+  const bookings = toArray(data);
+  const upcoming = bookings.filter((b: any) => UPCOMING_STATUSES.includes(b.status));
+  const past = bookings.filter((b: any) => PAST_STATUSES.includes(b.status));
   const list = tab === "upcoming" ? upcoming : past;
 
   return (
     <MobileShell showHeader={true} scroll={true}>
-      <View style={tw`gap-y-5 px-5 pb-6 pt-2`}>
-        <Text style={tw`text-2xl font-bold tracking-tight text-zinc-900`}>Bookings</Text>
+      <View style={tw`gap-y-5 px-5 pb-6 pt-1`}>
+        <Text style={tw`text-[28px] font-bold tracking-tight text-zinc-900`}>Bookings</Text>
 
-        {/* Toggle tabs */}
-        <View style={tw`flex-row rounded-full bg-stone-200/50 p-1`}>
-          {(["upcoming", "past"] as const).map((t) => (
-            <TouchableOpacity
-              key={t}
-              onPress={() => setTab(t)}
-              style={tw`flex-1 rounded-full py-2 items-center ${tab === t ? "bg-[#5c6f59]" : ""}`}
-            >
-              <Text style={tw`text-xs font-semibold capitalize ${tab === t ? "text-white" : "text-zinc-600"}`}>
-                {t}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <SegmentedControl
+          value={tab}
+          onChange={setTab}
+          options={[
+            { key: "upcoming", label: "Upcoming" },
+            { key: "past", label: "Past" },
+          ]}
+        />
 
-        {/* Bookings list */}
         <View style={tw`gap-3`}>
           {list.length === 0 && (
-            <View style={tw`rounded-2xl bg-stone-100 p-6 items-center`}>
-              <Text style={tw`text-sm font-semibold text-zinc-500`}>Nothing here yet.</Text>
-            </View>
+            <EmptyState
+              icon={<CalendarX size={28} color={color.ink3} strokeWidth={1.5} />}
+              title="Nothing here yet"
+              subtitle={tab === "upcoming" ? "Book a service to see it appear here." : "Your completed visits will show up here."}
+            />
           )}
           {list.map((b: any) => {
             const tone: "sand" | "sage" | "terracotta" =
-              b.status === "CANCELLED" ? "terracotta" : b.status === "COMPLETED" ? "sand" : "sage";
-            const serviceName = b.items?.[0]?.service?.name || "Service";
-            const storeName = b.store?.name || "Unknown Store";
+              b.status === "cancelled" || b.status === "no_show" ? "terracotta" : b.status === "completed" ? "sand" : "sage";
+            const firstSlot = b.slots?.[0];
+            const serviceName = firstSlot?.store_service_name || "Service";
+            const totalPaise = (b.slots || []).reduce((sum: number, s: any) => sum + (s.price_paise || 0), 0);
+            const start = new Date(b.booking_start);
 
             return (
-              <Link
-                key={b.id}
-                href={{ pathname: "/booking/[id]", params: { id: b.id } }}
-                asChild
-              >
-                <TouchableOpacity style={tw`flex-col rounded-2xl bg-stone-100/60 p-4 border border-stone-200/30`}>
-                  <View style={tw`flex-row items-start justify-between`}>
-                    <View style={tw`flex-1 pr-2`}>
-                      <Text style={tw`text-sm font-semibold text-zinc-900`}>{serviceName}</Text>
-                      <Text style={tw`text-xs text-zinc-500 mt-0.5`}>
-                        {storeName}
-                      </Text>
-                      <Text style={tw`mt-1 text-xs text-zinc-400 font-medium`}>{b.date} at {b.start_time}</Text>
-                    </View>
-                    <Chip tone={tone}>{b.status}</Chip>
+              <Card key={b.id} href={`/booking/${b.id}`} padded>
+                <View style={tw`flex-row items-start justify-between`}>
+                  <View style={tw`flex-1 pr-2`}>
+                    <Text style={tw`text-[15px] font-semibold text-zinc-900`}>{serviceName}</Text>
+                    <Text style={tw`text-[13px] text-zinc-500 mt-0.5`}>{b.outlet_name}</Text>
+                    <Text style={tw`mt-1.5 text-[12px] text-zinc-400 font-medium`}>
+                      {formatSlotDate(start)} at {formatSlotTime(start)}
+                      {totalPaise > 0 ? ` · ${formatINR(totalPaise / 100)}` : ""}
+                    </Text>
                   </View>
-                </TouchableOpacity>
-              </Link>
+                  <Chip tone={tone}>{b.status.replace("_", " ").toUpperCase()}</Chip>
+                </View>
+              </Card>
             );
           })}
         </View>

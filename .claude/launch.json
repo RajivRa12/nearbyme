@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "store-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "StoreAdmin", "run", "dev"],
+      "port": 8080
+    },
+    {
+      "name": "customer-app-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "CustomerApp", "run", "web", "--", "--port", "8081"],
+      "port": 8081
+    },
+    {
+      "name": "therapist-app-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "TherapistAppMobile", "run", "web", "--", "--port", "8082"],
+      "port": 8082
+    },
+    {
+      "name": "backend",
+      "url": "http://localhost:8000"
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "Web", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

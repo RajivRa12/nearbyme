@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import tw from "twrnc";
 import { MobileShell } from "../../components/MobileShell";
 import { PageHeader } from "../../components/primitives";
+import { color, shadow } from "../../lib/theme";
 
 type SupportItem = { icon: any; label: string; hint?: string };
 
@@ -23,14 +24,15 @@ export default function Support() {
           return (
             <TouchableOpacity
               key={i.label}
-              style={tw`flex-row w-full items-center gap-3 rounded-2xl bg-stone-100/60 p-4 border border-stone-200/30 mt-2`}
+              activeOpacity={0.7}
+              style={{ ...tw`flex-row w-full items-center gap-3.5 rounded-3xl bg-white p-4 border border-stone-100`, ...shadow.xs }}
             >
-              <View style={tw`flex h-10 w-10 items-center justify-center rounded-xl bg-[#5c6f59]`}>
-                <Icon size={18} color="white" strokeWidth={1.5} />
+              <View style={[tw`flex h-11 w-11 items-center justify-center rounded-2xl`, { backgroundColor: color.sage }]}>
+                <Icon size={18} color="white" strokeWidth={1.6} />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={tw`text-sm font-semibold text-zinc-800`}>{i.label}</Text>
-                {i.hint && <Text style={tw`text-xs text-zinc-500 mt-0.5`}>{i.hint}</Text>}
+                <Text style={tw`text-[14px] font-semibold text-zinc-800`}>{i.label}</Text>
+                {i.hint && <Text style={tw`text-[12px] text-zinc-500 mt-0.5`}>{i.hint}</Text>}
               </View>
             </TouchableOpacity>
           );

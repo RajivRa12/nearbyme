@@ -1,30 +1,35 @@
 import { Tabs } from 'expo-router';
-import { Home, Compass, Sparkles, Calendar, User } from 'lucide-react-native';
-import { View, Platform } from 'react-native';
-import tw from 'twrnc';
+import { Home, Compass, Calendar, User } from 'lucide-react-native';
+import { Platform } from 'react-native';
+import { color } from '@/lib/theme';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#5c6f59', // sage-600
-        tabBarInactiveTintColor: '#a1a1aa', // zinc-400
+        tabBarActiveTintColor: color.sage,
+        tabBarInactiveTintColor: color.ink3,
         tabBarStyle: {
-          backgroundColor: '#faf9f6', // sand-50
+          backgroundColor: color.bg,
           borderTopWidth: 1,
-          borderTopColor: 'rgba(0, 0, 0, 0.05)',
-          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-          paddingTop: 8,
-          height: Platform.OS === 'ios' ? 88 : 64,
+          borderTopColor: color.line,
+          paddingBottom: Platform.OS === 'ios' ? 26 : 14,
+          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 88 : 66,
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
+          fontSize: 10.5,
+          fontWeight: '600',
+          letterSpacing: 0.1,
+          marginTop: 1,
+        },
+        tabBarItemStyle: {
+          gap: 2,
         },
       }}
     >
@@ -32,14 +37,14 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Home color={color} size={20} strokeWidth={1.6} />,
+          tabBarIcon: ({ color: c, focused }) => <Home color={c} size={22} strokeWidth={focused ? 2.1 : 1.6} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <Compass color={color} size={20} strokeWidth={1.6} />,
+          tabBarIcon: ({ color: c, focused }) => <Compass color={c} size={22} strokeWidth={focused ? 2.1 : 1.6} />,
         }}
       />
       <Tabs.Screen
@@ -52,14 +57,14 @@ export default function TabLayout() {
         name="bookings"
         options={{
           title: 'Bookings',
-          tabBarIcon: ({ color }) => <Calendar color={color} size={20} strokeWidth={1.6} />,
+          tabBarIcon: ({ color: c, focused }) => <Calendar color={c} size={22} strokeWidth={focused ? 2.1 : 1.6} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <User color={color} size={20} strokeWidth={1.6} />,
+          tabBarIcon: ({ color: c, focused }) => <User color={c} size={22} strokeWidth={focused ? 2.1 : 1.6} />,
         }}
       />
     </Tabs>

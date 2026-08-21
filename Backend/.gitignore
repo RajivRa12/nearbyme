@@ -1,0 +1,32 @@
+# Python & Django caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Environment secrets
+.env
+*.env
+!.env.example
+
+# Database & Logs
+*.sqlite3
+*.db
+*.log
+logs/
+error.html
+test-results/
+
+# Static media & uploads in local development
+media/
+uploads/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,27 @@
+category_name,category_slug,applies_to,display_order,service_name,service_slug,default_duration_min,buffer_before_min,buffer_after_min,resource_type,gender_applicability,skill_tag
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Men's Classic Haircut,mens-classic-haircut,30,5,5,chair,men,stylist
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Women's Advanced Trim & Styling,womens-advanced-trim-styling,60,10,10,chair,women,senior_stylist
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Kid's Haircut,kids-haircut,30,5,5,chair,unisex,stylist
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Blow Dry & Styling,blow-dry-styling,45,5,10,chair,women,stylist
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Beard Trim & Styling,beard-trim-styling,20,0,5,chair,men,barber
+Hair Styling & Haircuts,hair-styling-haircuts,salon,10,Executive Grooming Package,executive-grooming-package,60,10,10,chair,men,senior_stylist
+Hair Coloring & Highlights,hair-coloring-highlights,salon,20,Root Touch Up,root-touch-up,60,10,15,chair,unisex,colorist
+Hair Coloring & Highlights,hair-coloring-highlights,salon,20,Global Hair Coloring,global-hair-coloring,120,15,15,chair,unisex,senior_colorist
+Hair Coloring & Highlights,hair-coloring-highlights,salon,20,Balayage & Ombre Styling,balayage-ombre-styling,180,15,30,chair,women,master_colorist
+Hair Coloring & Highlights,hair-coloring-highlights,salon,20,Partial Highlights,partial-highlights,90,10,15,chair,unisex,colorist
+Hair Coloring & Highlights,hair-coloring-highlights,salon,20,Ammonia Free Coloring,ammonia-free-coloring,90,10,15,chair,unisex,colorist
+Hair Treatment & Care,hair-treatment-care,salon,30,Keratin Smoothing Treatment,keratin-smoothing-treatment,150,15,20,chair,unisex,hair_specialist
+Hair Treatment & Care,hair-treatment-care,salon,30,Hair Spa with Scalp Massage,hair-spa-scalp-massage,60,10,10,chair,unisex,therapist
+Hair Treatment & Care,hair-treatment-care,salon,30,Anti Dandruff Deep Cleanse,anti-dandruff-deep-cleanse,45,5,10,chair,unisex,hair_specialist
+Hair Treatment & Care,hair-treatment-care,salon,30,Olaplex Bond Repair Treatment,olaplex-bond-repair-treatment,90,10,15,chair,unisex,senior_stylist
+Hair Treatment & Care,hair-treatment-care,salon,30,Moroccan Oil Intense Hydration,moroccan-oil-intense-hydration,60,10,10,chair,unisex,stylist
+Skin & Facial Treatments,skin-facial-treatments,both,40,Deep Cleansing Facial,deep-cleansing-facial,60,10,15,room,unisex,facial_specialist
+Skin & Facial Treatments,skin-facial-treatments,both,40,HydraFacial Glow Treatment,hydrafacial-glow-treatment,75,15,15,equipment,unisex,aesthetician
+Skin & Facial Treatments,skin-facial-treatments,both,40,Anti Aging Radiance Facial,anti-aging-radiance-facial,90,15,15,room,unisex,senior_aesthetician
+Skin & Facial Treatments,skin-facial-treatments,both,40,Fruit & Herbal Facial,fruit-herbal-facial,45,10,10,room,unisex,therapist
+Skin & Facial Treatments,skin-facial-treatments,both,40,Vitamin C Antioxidant Peel,vitamin-c-antioxidant-peel,60,10,15,equipment,unisex,aesthetician
+Skin & Facial Treatments,skin-facial-treatments,both,40,Gold Sheen Skin Illuminating Facial,gold-sheen-skin-illuminating-facial,75,15,15,room,women,senior_aesthetician
+Body Massage & Therapy,body-massage-therapy,spa,50,Swedish Body Massage,swedish-body-massage,60,15,15,room,unisex,massage_therapist
+Body Massage & Therapy,body-massage-therapy,spa,50,Deep Tissue Massage,deep-tissue-massage,60,15,20,room,unisex,senior_therapist
+Body Massage & Therapy,body-massage-therapy,spa,50,Aromatherapy Relaxation Massage,aromatherapy-relaxation-massage,90,15,20,room,unisex,massage_therapist
+Body Massage & Therapy,body-massage-therapy,spa,50,Balinese Traditional Massage,balinese-traditional-massage,90,15,20,room,unisex,massage_therapist

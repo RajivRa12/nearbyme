@@ -1,88 +1,158 @@
-import { Search, Scissors, Droplet, Activity, Heart, Sparkles, PenTool, Brush, Home as HomeIcon, BookOpen } from "lucide-react-native";
-import { Link } from "expo-router";
-import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator } from "react-native";
+import { Search, MapPin, Star, MessageCircle, Sparkles } from "lucide-react-native";
+import { Link, router } from "expo-router";
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Image } from "expo-image";
+import { useMemo } from "react";
 import tw from "twrnc";
 import { MobileShell } from "@/components/MobileShell";
-import { SectionHeader } from "@/components/primitives";
+import { PhotoScrim, Avatar } from "@/components/primitives";
 import { useQuery } from "@/hooks/useFetch";
+import { color, shadow } from "@/lib/theme";
+import { photoForId } from "@/lib/photos";
+import { formatDiscount, startConversation, toArray, formatSlotDate, formatSlotTime } from "@/lib/api";
+import { useLocation } from "@/lib/locationState";
+import { CATEGORIES } from "@/lib/categories";
+import { sortByDistance } from "@/lib/geo";
+
+async function messageTherapist(therapistId: string | number, name: string) {
+  const convoId = await startConversation(therapistId);
+  if (convoId) router.push({ pathname: "/messages/[id]", params: { id: convoId, name } });
+}
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Morning";
+  if (h < 17) return "Afternoon";
+  return "Evening";
+}
 
 export default function Home() {
   const { data: storesObj, isLoading: loadingStores } = useQuery<any>('/api/customer/stores/');
-  const { data: trendingObj, isLoading: loadingTrending } = useQuery<any>('/api/customer/trending-services/');
-  const { data: offersObj, isLoading: loadingOffers } = useQuery<any>('/api/customer/offers/');
+  const { data: offersObj } = useQuery<any>('/api/customer/offers/');
   const { data: profileObj, isLoading: loadingProfile } = useQuery<any>('/api/customer/profile/');
-  const { data: aptsObj, isLoading: loadingApts } = useQuery<any>('/api/customer/appointments/');
+  const { data: bookingsObj } = useQuery<any>('/api/customer/bookings/');
+  const { data: trendingObj } = useQuery<any>('/api/customer/trending-services/');
+  const { data: recTherapistsObj } = useQuery<any>('/api/customer/recommended-therapists/');
 
-  const stores = storesObj?.results || (Array.isArray(storesObj) ? storesObj : []);
-  const trending = trendingObj?.results || (Array.isArray(trendingObj) ? trendingObj : []);
+  const picked = useLocation();
+  const stores: any[] = storesObj?.results || (Array.isArray(storesObj) ? storesObj : []);
   const offers = offersObj?.results || (Array.isArray(offersObj) ? offersObj : []);
-  const apts = aptsObj?.results || (Array.isArray(aptsObj) ? aptsObj : []);
+  const bookings = toArray<any>(bookingsObj);
+  const trendingServices = trendingObj?.results || (Array.isArray(trendingObj) ? trendingObj : []);
+  const recommendedTherapists = recTherapistsObj?.results || (Array.isArray(recTherapistsObj) ? recTherapistsObj : []);
+  const points = profileObj?.loyalty_points ?? 0;
 
-  const upcomingApt = apts.find((a: any) => a.status === 'UPCOMING' || a.status === 'PENDING');
-  
-  const flashDeals = offers.slice(0, 5); // Just take the first few
+  const now = Date.now();
+  const upcomingBooking = bookings
+    .filter((b: any) => (b.status === 'confirmed' || b.status === 'draft') && new Date(b.booking_start).getTime() > now)
+    .sort((a: any, b: any) => new Date(a.booking_start).getTime() - new Date(b.booking_start).getTime())[0];
+  const flashDeals = offers.slice(0, 5);
 
-  const categories = [
-    { id: 'salon', name: 'Salon', icon: Scissors },
-    { id: 'spa', name: 'Spa', icon: Droplet },
-    { id: 'clinic', name: 'Clinic', icon: Activity },
-    { id: 'massage', name: 'Massage', icon: Heart },
-    { id: 'barber', name: 'Barber', icon: Scissors },
-    { id: 'nails', name: 'Nail studio', icon: Sparkles },
-    { id: 'tattoo', name: 'Tattoo', icon: PenTool },
-    { id: 'makeup', name: 'Makeup artist', icon: Brush },
-    { id: 'home', name: 'Home services', icon: HomeIcon },
-    { id: 'wellness', name: 'Wellness centre', icon: Heart },
-    { id: 'academy', name: 'Beauty academy', icon: BookOpen },
-  ];
+  const sortedStores = useMemo(() => {
+    const byDistance = sortByDistance(stores, { lat: picked.lat, lng: picked.lng });
+    // Premium listings are a paid ranking boost — bump them to the top,
+    // keeping distance order within each group (Array#sort is stable), so
+    // "Featured this week" genuinely reflects a premium listing when one
+    // exists nearby rather than always just being the nearest store.
+    return [...byDistance].sort((a: any, b: any) => Number(!!b.is_premium_listing) - Number(!!a.is_premium_listing));
+  }, [stores, picked.lat, picked.lng]);
+  const featured = sortedStores[0];
+  const rest = sortedStores.slice(1);
 
-  if (loadingStores || loadingTrending || loadingProfile) {
+  if (loadingStores || loadingProfile) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-white`}>
-        <ActivityIndicator size="large" color="#5c6f59" />
+      <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: color.bg }]}>
+        <ActivityIndicator size="large" color={color.sage} />
       </View>
     );
   }
 
   return (
     <MobileShell showHeader={true} scroll={true}>
-      <View style={tw`gap-y-6 pb-6 pt-2`}>
-        {/* User Greeting & Search */}
-        <View style={tw`px-5 gap-3`}>
-          <Text style={tw`text-2xl font-bold tracking-tight text-zinc-900`}>
-            Morning, {profileObj?.first_name || 'Guest'}.
+      <View style={tw`gap-y-7 pb-6 pt-1`}>
+        {/* Greeting & Search */}
+        <View style={tw`px-5 gap-4`}>
+          <Text style={tw`text-[28px] font-bold tracking-tight text-zinc-900 leading-tight`}>
+            {getGreeting()}, {profileObj?.first_name || 'Guest'}
           </Text>
           <Link href="/explore" asChild>
             <TouchableOpacity
-              style={tw`relative flex-row h-12 w-full items-center rounded-2xl bg-stone-100 pl-11 pr-4 text-sm border border-stone-200/40`}
+              style={{
+                ...tw`relative flex-row h-12 w-full items-center rounded-2xl bg-white pl-11 pr-4 border border-stone-100`,
+                ...shadow.xs,
+              }}
             >
-              <Search size={16} color="#71717a" style={tw`absolute left-4`} strokeWidth={1.5} />
-              <Text style={tw`text-sm text-zinc-500`}>Find a service or salon</Text>
+              <Search size={16} color={color.ink3} style={tw`absolute left-4`} strokeWidth={2} />
+              <Text style={tw`text-[14px] text-zinc-400`}>Find a service or salon</Text>
             </TouchableOpacity>
           </Link>
         </View>
 
         {/* Next Appointment Card */}
-        {upcomingApt && (
-          <View style={tw`px-5 mt-4`}>
-            <Link href={{ pathname: "/booking/[id]", params: { id: upcomingApt.id } }} asChild>
+        {upcomingBooking && (
+          <View style={tw`px-5`}>
+            <Link href={{ pathname: "/booking/[id]", params: { id: upcomingBooking.id } }} asChild>
               <TouchableOpacity
-                style={tw`flex-col gap-4 rounded-3xl bg-[#5c6f59] p-5 shadow-sm`}
+                activeOpacity={0.9}
+                style={{ ...tw`flex-col gap-4 rounded-[28px] p-5`, backgroundColor: color.sage, ...shadow.md }}
               >
                 <View style={tw`flex-row items-center justify-between`}>
-                  <Text style={tw`text-[10px] font-semibold uppercase tracking-widest text-white opacity-80`}>
+                  <Text style={tw`text-[10px] font-semibold uppercase tracking-widest text-white opacity-75`}>
                     Next appointment
                   </Text>
-                  <View style={tw`rounded-full bg-white/15 px-2.5 py-0.5`}>
-                    <Text style={tw`text-[10px] font-semibold text-white`}>{upcomingApt.date}</Text>
+                  <View style={tw`rounded-full bg-white/15 px-2.5 py-1`}>
+                    <Text style={tw`text-[10px] font-semibold text-white`}>
+                      {formatSlotDate(upcomingBooking.booking_start)}
+                    </Text>
                   </View>
                 </View>
                 <View>
-                  <Text style={tw`text-lg font-bold text-white`}>{upcomingApt.items?.[0]?.service?.name || 'Service'}</Text>
-                  <Text style={tw`text-sm text-white/90`}>{upcomingApt.store?.name} · {upcomingApt.start_time}</Text>
+                  <Text style={tw`text-[19px] font-bold text-white leading-tight`}>{upcomingBooking.slots?.[0]?.store_service_name || 'Service'}</Text>
+                  <Text style={tw`text-[13px] text-white/85 mt-1`}>
+                    {upcomingBooking.outlet_name} · {formatSlotTime(upcomingBooking.booking_start)}
+                  </Text>
                 </View>
-                <View style={tw`rounded-xl bg-white py-2.5 items-center`}>
-                  <Text style={tw`text-sm font-semibold text-[#5c6f59]`}>View details</Text>
+                <View style={tw`rounded-2xl bg-white py-3 items-center`}>
+                  <Text style={[tw`text-[14px] font-semibold`, { color: color.sage }]}>View details</Text>
+                </View>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        )}
+
+        {/* Featured salon — editorial hero */}
+        {featured && (
+          <View style={tw`px-5`}>
+            <Link href={{ pathname: "/salon/[id]", params: { id: featured.id } }} asChild>
+              <TouchableOpacity activeOpacity={0.92} style={{ ...tw`rounded-[28px] overflow-hidden`, ...shadow.md }}>
+                <View style={[tw`w-full`, { aspectRatio: 4 / 3 }]}>
+                  <Image
+                    source={{ uri: photoForId(featured.id, 900) }}
+                    style={tw`w-full h-full`}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <PhotoScrim />
+                  <View style={tw`absolute top-4 left-4`}>
+                    <View style={tw`rounded-full bg-white/90 px-3 py-1.5`}>
+                      <Text style={tw`text-[10px] font-bold uppercase tracking-widest text-zinc-800`}>Featured this week</Text>
+                    </View>
+                  </View>
+                  <View style={tw`absolute inset-x-0 bottom-0 p-5 gap-1.5`}>
+                    <View style={tw`flex-row items-center justify-between`}>
+                      <Text style={tw`flex-1 text-[22px] font-bold text-white leading-tight pr-3`} numberOfLines={1}>
+                        {featured.name}
+                      </Text>
+                      <View style={tw`flex-row items-center gap-1`}>
+                        <Star size={13} color="#fff" fill="#fff" strokeWidth={0} />
+                        <Text style={tw`text-[13px] font-semibold text-white`}>4.8</Text>
+                      </View>
+                    </View>
+                    <View style={tw`flex-row items-center gap-1`}>
+                      <MapPin size={11} color="rgba(255,255,255,0.85)" strokeWidth={2} />
+                      <Text style={tw`text-[12px] text-white/85`} numberOfLines={1}>{featured.address}</Text>
+                    </View>
+                  </View>
                 </View>
               </TouchableOpacity>
             </Link>
@@ -91,10 +161,10 @@ export default function Home() {
 
         {/* Flash Deals Horizontal Scroll */}
         {flashDeals.length > 0 && (
-          <View style={tw`mt-4 gap-3`}>
+          <View style={tw`gap-3.5`}>
             <View style={tw`flex-row items-center justify-between px-5`}>
-              <Text style={tw`text-base font-semibold text-zinc-900`}>Flash deals</Text>
-              <Text style={tw`text-xs font-semibold text-[#c06048]`}>04:12:55 remaining</Text>
+              <Text style={tw`text-[17px] font-semibold text-zinc-900`}>Flash deals</Text>
+              <Text style={tw`text-[12px] text-zinc-400`}>{flashDeals.length} available</Text>
             </View>
             <FlatList
               horizontal
@@ -105,11 +175,11 @@ export default function Home() {
               renderItem={({ item }) => (
                 <Link href="/offers" asChild>
                   <TouchableOpacity
-                    style={tw`flex-row items-center gap-2 rounded-full bg-stone-100 px-4 py-2 border border-stone-200/40`}
+                    style={{ ...tw`flex-row items-center gap-2 rounded-full bg-white px-4 py-2.5 border border-stone-100`, ...shadow.xs }}
                   >
-                    <Text style={tw`text-[#c06048] font-bold`}>•</Text>
-                    <Text style={tw`text-xs font-semibold text-zinc-800`}>
-                      {item.code} {item.discount_percent}% OFF
+                    <View style={[tw`h-1.5 w-1.5 rounded-full`, { backgroundColor: color.terracotta }]} />
+                    <Text style={tw`text-[12px] font-semibold text-zinc-800`}>
+                      {item.code} · {formatDiscount(item)}
                     </Text>
                   </TouchableOpacity>
                 </Link>
@@ -118,75 +188,160 @@ export default function Home() {
           </View>
         )}
 
-        {/* Categories Scroll */}
-        <View style={tw`mt-4 gap-4`}>
-          <SectionHeader title="Explore by category" action="See all" actionHref="/explore" />
+        {/* Trending services */}
+        {trendingServices.length > 0 && (
+          <View style={tw`gap-3.5`}>
+            <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Trending services</Text>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={trendingServices}
+              keyExtractor={(item: any) => item.id.toString()}
+              contentContainerStyle={tw`px-5 gap-3`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  disabled={!item.store_id}
+                  onPress={() => item.store_id && router.push({ pathname: "/salon/[id]", params: { id: item.store_id } })}
+                  style={{ ...tw`w-44 rounded-3xl bg-white p-4 border border-stone-100`, ...shadow.xs }}
+                >
+                  {item.is_premium_listing && (
+                    <View style={[tw`self-start rounded-full px-2 py-0.5 mb-2`, { backgroundColor: color.goldTint }]}>
+                      <Text style={[tw`text-[9px] font-bold uppercase tracking-wide`, { color: color.gold }]}>Popular</Text>
+                    </View>
+                  )}
+                  <Text style={tw`text-[14px] font-semibold text-zinc-900`} numberOfLines={2}>{item.name}</Text>
+                  <Text style={tw`text-[12px] text-zinc-500 mt-1`} numberOfLines={1}>{item.store_name || item.category_name || "Service"}</Text>
+                  <View style={tw`flex-row items-center justify-between mt-3`}>
+                    <Text style={tw`text-[13px] font-bold text-zinc-900`}>₹{item.price}</Text>
+                    <Text style={tw`text-[11px] text-zinc-400`}>{item.duration_minutes} min</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
+
+        {/* Recommended therapists */}
+        {recommendedTherapists.length > 0 && (
+          <View style={tw`gap-3.5`}>
+            <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Recommended therapists</Text>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={recommendedTherapists}
+              keyExtractor={(item: any) => item.id.toString()}
+              contentContainerStyle={tw`px-5 gap-4`}
+              renderItem={({ item }) => {
+                const fullName = `${item.first_name} ${item.last_name || ""}`.trim();
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => messageTherapist(item.id, fullName)}
+                    style={tw`w-20 items-center gap-2`}
+                  >
+                    <View>
+                      <Avatar name={fullName} size={60} />
+                      <View style={[tw`absolute -bottom-1 -right-1 h-6 w-6 rounded-full items-center justify-center border-2`, { backgroundColor: color.sage, borderColor: color.bg }]}>
+                        <MessageCircle size={11} color="#fff" strokeWidth={2.4} />
+                      </View>
+                    </View>
+                    <Text style={tw`text-[12px] font-semibold text-zinc-800 text-center`} numberOfLines={1}>
+                      {item.first_name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        )}
+
+        {/* Category filter pills */}
+        <View style={tw`gap-3.5`}>
+          <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Browse by category</Text>
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={categories}
+            data={CATEGORIES}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={tw`px-5 gap-3`}
+            contentContainerStyle={tw`px-5 gap-2`}
             renderItem={({ item }) => {
               const Icon = item.icon;
               return (
                 <TouchableOpacity
-                  style={tw`items-center justify-center gap-2 rounded-3xl bg-stone-100 border border-stone-200/40 w-[90px] h-[100px]`}
+                  activeOpacity={0.75}
+                  onPress={() => router.push({ pathname: "/(tabs)/explore", params: { category: item.id } })}
+                  style={tw`flex-row items-center gap-2 rounded-full bg-white border border-stone-100 pl-3 pr-4 h-10`}
                 >
-                  <View style={tw`bg-white p-2.5 rounded-full shadow-sm`}>
-                    <Icon size={22} color="#5c6f59" strokeWidth={1.5} />
-                  </View>
-                  <Text style={tw`text-[11px] font-medium text-zinc-800 text-center leading-tight px-1`}>{item.name}</Text>
+                  <Icon size={15} color={color.sage} strokeWidth={2} />
+                  <Text style={tw`text-[13px] font-medium text-zinc-700`}>{item.name}</Text>
                 </TouchableOpacity>
               );
             }}
           />
         </View>
 
-        {/* Stores Grid (Replaced Trending Services) */}
-        <View style={tw`px-5 mt-4 gap-4`}>
-          <Text style={tw`text-base font-semibold text-zinc-900`}>Popular Places Near You</Text>
-          <View style={tw`flex-row flex-wrap justify-between gap-y-4`}>
-            {stores.map((s: any) => (
-              <Link
-                key={s.id}
-                href={{ pathname: "/salon/[id]", params: { id: s.id } }}
-                asChild
-              >
-                <TouchableOpacity style={tw`w-[47%] gap-2`}>
-                  <View style={tw`w-full h-32 rounded-2xl bg-zinc-200 items-center justify-center`}>
-                    <Text style={tw`text-2xl font-bold text-zinc-400`}>{s.name.charAt(0)}</Text>
-                  </View>
-                  <View>
-                    <Text style={tw`text-sm font-semibold text-zinc-900 leading-tight`}>
-                      {s.name}
-                    </Text>
-                    <Text style={tw`text-xs text-zinc-500`}>
-                      {s.address}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </Link>
-            ))}
+        {/* Editorial list of remaining places */}
+        {rest.length > 0 && (
+          <View style={tw`px-5 gap-4`}>
+            <Text style={tw`text-[17px] font-semibold text-zinc-900`}>More near {picked.city}</Text>
+            <View style={tw`gap-4`}>
+              {rest.map((s: any) => (
+                <Link key={s.id} href={{ pathname: "/salon/[id]", params: { id: s.id } }} asChild>
+                  <TouchableOpacity activeOpacity={0.8} style={tw`flex-row gap-3.5`}>
+                    <Image
+                      source={{ uri: photoForId(s.id, 260) }}
+                      style={{ ...tw`rounded-2xl`, width: 92, height: 92 }}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    <View style={tw`flex-1 justify-center gap-1`}>
+                      <View style={tw`flex-row items-center justify-between gap-2`}>
+                        <Text style={tw`flex-1 text-[15px] font-semibold text-zinc-900`} numberOfLines={1}>
+                          {s.name}
+                        </Text>
+                        <View style={tw`flex-row items-center gap-1`}>
+                          <Star size={11} color={color.terracotta} fill={color.terracotta} strokeWidth={0} />
+                          <Text style={tw`text-[12px] font-semibold text-zinc-800`}>4.8</Text>
+                        </View>
+                      </View>
+                      <View style={tw`flex-row items-center gap-1`}>
+                        <MapPin size={10} color={color.ink3} strokeWidth={2} />
+                        <Text style={tw`text-[12px] text-zinc-500 flex-1`} numberOfLines={1}>{s.address}</Text>
+                      </View>
+                      {!!s.is_premium_listing && (
+                        <View style={tw`flex-row items-center gap-1 mt-0.5`}>
+                          <Sparkles size={10} color={color.terracotta} strokeWidth={2} />
+                          <Text style={[tw`text-[11px] font-semibold`, { color: color.terracotta }]}>Featured</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </Link>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Rewards Banner */}
-        <View style={tw`px-5 mt-4 pb-4`}>
+        <View style={tw`px-5`}>
           <Link href="/rewards" asChild>
             <TouchableOpacity
-              style={tw`rounded-3xl bg-[#faf9f6] p-5 border border-stone-200/60 shadow-sm`}
+              activeOpacity={0.85}
+              style={{ ...tw`rounded-3xl bg-white p-5 border border-stone-100`, ...shadow.xs }}
             >
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`gap-1`}>
-                  <Text style={tw`text-xs font-semibold uppercase tracking-wider text-[#5c6f59]`}>
-                    Nearbyme Rewards
+                  <Text style={[tw`text-[11px] font-semibold uppercase tracking-wider`, { color: color.sage }]}>
+                    Nearbyme rewards
                   </Text>
-                  <Text style={tw`text-lg font-bold text-zinc-800`}>1,420 points</Text>
-                  <Text style={tw`text-xs text-zinc-500`}>580 points to next reward</Text>
+                  <Text style={tw`text-[19px] font-bold text-zinc-900`}>{points.toLocaleString("en-IN")} points</Text>
+                  <Text style={tw`text-[12px] text-zinc-500`}>
+                    {Math.max(0, Math.ceil((points + 1) / 500) * 500 - points)} points to next reward
+                  </Text>
                 </View>
-                <View style={tw`rounded-full bg-[#5c6f59]/10 px-3 py-1.5`}>
-                  <Text style={tw`text-xs font-semibold text-[#5c6f59]`}>View rewards</Text>
+                <View style={[tw`rounded-full px-3.5 py-2`, { backgroundColor: color.sageTint }]}>
+                  <Text style={[tw`text-[12px] font-semibold`, { color: color.sage }]}>View rewards</Text>
                 </View>
               </View>
             </TouchableOpacity>

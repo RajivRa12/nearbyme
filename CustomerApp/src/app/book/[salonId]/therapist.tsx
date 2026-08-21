@@ -2,62 +2,67 @@ import { useLocalSearchParams, router } from "expo-router";
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import tw from "twrnc";
 import { BookingStepper } from "../../../components/BookingStepper";
-import { PrimaryButton, StickyBottomBar, Rating } from "../../../components/primitives";
+import { PrimaryButton, StickyBottomBar, Rating, Avatar } from "../../../components/primitives";
 import { setDraft, useDraft } from "../../../lib/bookingState";
 import { useQuery } from "../../../hooks/useFetch";
+import { color } from "../../../lib/theme";
 
 export default function ChooseTherapist() {
   const { salonId } = useLocalSearchParams<{ salonId: string }>();
   const draft = useDraft();
-  
-  const { data: recObj, isLoading } = useQuery<any>('/api/customer/recommended-therapists/');
-  const therapists = recObj?.results || (Array.isArray(recObj) ? recObj : []);
-  const staff = therapists.filter((t: any) => t.store === Number(salonId));
+
+  const { data: profObj, isLoading } = useQuery<any>(
+    `/api/customer/stores/${salonId}/phase1-professionals/?service_id=${draft.serviceId ?? ""}`,
+    !!draft.serviceId
+  );
+  const professionals = profObj?.data || [];
 
   return (
     <BookingStepper salonId={salonId as string} current="therapist" title="Choose your therapist">
       <ScrollView style={tw`flex-1 px-5`} contentContainerStyle={tw`pb-32 pt-4`} showsVerticalScrollIndicator={false}>
         <View style={tw`gap-2`}>
-          {/* Any Available Therapist Button */}
+          {/* Any Available Professional Button */}
           <TouchableOpacity
-            onPress={() => setDraft({ therapistId: "any" })}
-            style={tw`flex-row w-full items-center gap-3 rounded-2xl p-4 border ${draft.therapistId === "any" ? "bg-[#5c6f59] border-[#5c6f59]" : "bg-stone-100/60 border-stone-200/30"
+            onPress={() => setDraft({ professionalId: undefined, professionalName: "Any available" })}
+            style={tw`flex-row w-full items-center gap-3 rounded-2xl p-4 border ${!draft.professionalId && draft.professionalName ? "bg-[#5c6f59] border-[#5c6f59]" : "bg-stone-100/60 border-stone-200/30"
               }`}
           >
-            <View style={tw`size-12 rounded-full bg-stone-200 items-center justify-center`}>
-              <Text style={tw`text-base font-bold text-zinc-700`}>✱</Text>
+            <View style={[tw`size-12 rounded-full items-center justify-center`, { backgroundColor: color.sageTint }]}>
+              <Text style={[tw`text-base font-bold`, { color: color.sage }]}>✱</Text>
             </View>
             <View style={tw`flex-1`}>
-              <Text style={tw`text-sm font-semibold ${draft.therapistId === "any" ? "text-white" : "text-zinc-800"}`}>
-                Any available therapist
+              <Text style={tw`text-sm font-semibold ${!draft.professionalId && draft.professionalName ? "text-white" : "text-zinc-800"}`}>
+                Any available professional
               </Text>
-              <Text style={tw`text-xs mt-0.5 ${draft.therapistId === "any" ? "text-white/80" : "text-zinc-500"}`}>
+              <Text style={tw`text-xs mt-0.5 ${!draft.professionalId && draft.professionalName ? "text-white/80" : "text-zinc-500"}`}>
                 We'll match you with the best fit.
               </Text>
             </View>
           </TouchableOpacity>
 
-          {isLoading && <ActivityIndicator size="small" color="#5c6f59" style={tw`mt-4`} />}
+          {isLoading && <ActivityIndicator size="small" color={color.sage} style={tw`mt-4`} />}
 
-          {/* Individual Therapist Buttons */}
-          {!isLoading && staff.map((t: any) => {
-            const selected = draft.therapistId === t.id;
+          {!isLoading && professionals.length === 0 && (
+            <Text style={tw`text-xs text-zinc-500 text-center py-4`}>No professionals available for this service yet.</Text>
+          )}
+
+          {/* Individual Professional Buttons */}
+          {!isLoading && professionals.map((t: any) => {
+            const selected = draft.professionalId === t.id;
             return (
               <TouchableOpacity
                 key={t.id}
-                onPress={() => setDraft({ therapistId: t.id })}
+                onPress={() => setDraft({ professionalId: t.id, professionalName: t.display_name })}
                 style={tw`flex-row w-full items-center gap-3 rounded-2xl p-4 border ${selected ? "bg-[#5c6f59] border-[#5c6f59]" : "bg-stone-100/60 border-stone-200/30"
                   }`}
               >
-                <View style={tw`size-12 rounded-full bg-stone-200 items-center justify-center`}>
-                  <Text style={tw`text-xl font-bold text-zinc-400`}>{t.first_name?.charAt(0) || 'T'}</Text>
-                </View>
+                <Avatar name={t.display_name || "T"} size={48} />
                 <View style={tw`flex-1`}>
                   <Text style={tw`text-sm font-semibold ${selected ? "text-white" : "text-zinc-800"}`}>
-                    {t.first_name} {t.last_name}
+                    {t.display_name}
                   </Text>
                   <Text style={tw`text-xs mt-0.5 ${selected ? "text-white/80" : "text-zinc-500"}`}>
-                    Staff
+                    {t.display_role || "Staff"}
                   </Text>
                 </View>
                 <Rating value={4.9} />
@@ -69,10 +74,10 @@ export default function ChooseTherapist() {
 
       <StickyBottomBar>
         <PrimaryButton
-          disabled={!draft.therapistId}
-          onPress={() => router.push({ pathname: "/book/[salonId]/date", params: { salonId } })}
+          disabled={!draft.professionalName}
+          onClick={() => router.push({ pathname: "/book/[salonId]/room", params: { salonId } })}
         >
-          {draft.therapistId ? "Continue" : "Select a therapist"}
+          {draft.professionalName ? "Continue" : "Select a professional"}
         </PrimaryButton>
       </StickyBottomBar>
     </BookingStepper>
