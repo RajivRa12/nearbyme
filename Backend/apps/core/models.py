@@ -1550,7 +1550,7 @@ class Booking(SoftDeleteModel):
         if not self.booking_code:
             from django.db import transaction
             with transaction.atomic():
-                last = Booking.objects.select_for_update().exclude(booking_code__isnull=True).order_by('-booking_code').first()
+                last = Booking.all_objects.select_for_update().exclude(booking_code__isnull=True).order_by('-booking_code').first()
                 next_seq = 1
                 if last and last.booking_code:
                     try:

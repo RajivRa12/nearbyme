@@ -1,4 +1,4 @@
-#!/Users/pallarajiv/Downloads/Nearbyme/venv/bin/python3
+#!/Users/pallarajiv/Downloads/Nearbyme/Backend/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,6 +1,6 @@
 import { Search, MapPin, Star, MessageCircle, Sparkles } from "lucide-react-native";
 import { Link, router } from "expo-router";
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { useMemo } from "react";
 import tw from "twrnc";
@@ -166,14 +166,13 @@ export default function Home() {
               <Text style={tw`text-[17px] font-semibold text-zinc-900`}>Flash deals</Text>
               <Text style={tw`text-[12px] text-zinc-400`}>{flashDeals.length} available</Text>
             </View>
-            <FlatList
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={flashDeals}
-              keyExtractor={(item: any) => item.id.toString()}
               contentContainerStyle={tw`px-5 gap-3`}
-              renderItem={({ item }) => (
-                <Link href="/offers" asChild>
+            >
+              {flashDeals.map((item: any) => (
+                <Link key={item.id.toString()} href="/offers" asChild>
                   <TouchableOpacity
                     style={{ ...tw`flex-row items-center gap-2 rounded-full bg-white px-4 py-2.5 border border-stone-100`, ...shadow.xs }}
                   >
@@ -183,8 +182,8 @@ export default function Home() {
                     </Text>
                   </TouchableOpacity>
                 </Link>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -192,14 +191,14 @@ export default function Home() {
         {trendingServices.length > 0 && (
           <View style={tw`gap-3.5`}>
             <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Trending services</Text>
-            <FlatList
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={trendingServices}
-              keyExtractor={(item: any) => item.id.toString()}
               contentContainerStyle={tw`px-5 gap-3`}
-              renderItem={({ item }) => (
+            >
+              {trendingServices.map((item: any) => (
                 <TouchableOpacity
+                  key={item.id.toString()}
                   activeOpacity={0.8}
                   disabled={!item.store_id}
                   onPress={() => item.store_id && router.push({ pathname: "/salon/[id]", params: { id: item.store_id } })}
@@ -217,8 +216,8 @@ export default function Home() {
                     <Text style={tw`text-[11px] text-zinc-400`}>{item.duration_minutes} min</Text>
                   </View>
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -226,16 +225,16 @@ export default function Home() {
         {recommendedTherapists.length > 0 && (
           <View style={tw`gap-3.5`}>
             <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Recommended therapists</Text>
-            <FlatList
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={recommendedTherapists}
-              keyExtractor={(item: any) => item.id.toString()}
               contentContainerStyle={tw`px-5 gap-4`}
-              renderItem={({ item }) => {
+            >
+              {recommendedTherapists.map((item: any) => {
                 const fullName = `${item.first_name} ${item.last_name || ""}`.trim();
                 return (
                   <TouchableOpacity
+                    key={item.id.toString()}
                     activeOpacity={0.7}
                     onPress={() => messageTherapist(item.id, fullName)}
                     style={tw`w-20 items-center gap-2`}
@@ -251,24 +250,24 @@ export default function Home() {
                     </Text>
                   </TouchableOpacity>
                 );
-              }}
-            />
+              })}
+            </ScrollView>
           </View>
         )}
 
         {/* Category filter pills */}
         <View style={tw`gap-3.5`}>
           <Text style={tw`text-[17px] font-semibold text-zinc-900 px-5`}>Browse by category</Text>
-          <FlatList
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={CATEGORIES}
-            keyExtractor={(item) => item.id}
             contentContainerStyle={tw`px-5 gap-2`}
-            renderItem={({ item }) => {
+          >
+            {CATEGORIES.map((item) => {
               const Icon = item.icon;
               return (
                 <TouchableOpacity
+                  key={item.id}
                   activeOpacity={0.75}
                   onPress={() => router.push({ pathname: "/(tabs)/explore", params: { category: item.id } })}
                   style={tw`flex-row items-center gap-2 rounded-full bg-white border border-stone-100 pl-3 pr-4 h-10`}
@@ -277,8 +276,8 @@ export default function Home() {
                   <Text style={tw`text-[13px] font-medium text-zinc-700`}>{item.name}</Text>
                 </TouchableOpacity>
               );
-            }}
-          />
+            })}
+          </ScrollView>
         </View>
 
         {/* Editorial list of remaining places */}

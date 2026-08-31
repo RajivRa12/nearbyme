@@ -231,6 +231,7 @@ class Phase1BookingRequestSerializer(serializers.Serializer):
     is_home_service = serializers.BooleanField(required=False, default=False)
     service_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     hold_id = serializers.UUIDField(required=False, allow_null=True)
+    pay_with_wallet = serializers.BooleanField(required=False, default=False)
     razorpay_order_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     razorpay_payment_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     razorpay_signature = serializers.CharField(required=False, allow_null=True, allow_blank=True)

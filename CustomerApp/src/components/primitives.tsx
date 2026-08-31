@@ -261,20 +261,25 @@ export function StickyBottomBar({ children }: { children: ReactNode }) {
 
 export function PrimaryButton({
   children,
+  onPress,
   onClick,
   disabled,
   loading,
   className = "",
+  ...props
 }: {
   children: ReactNode;
+  onPress?: (e: any) => void;
   onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  [key: string]: any;
 }) {
   return (
     <TouchableOpacity
-      onPress={onClick}
+      {...props}
+      onPress={onPress || onClick}
       disabled={disabled || loading}
       activeOpacity={0.85}
       style={{
@@ -290,18 +295,23 @@ export function PrimaryButton({
 
 export function SecondaryButton({
   children,
+  onPress,
   onClick,
   disabled,
   className = "",
+  ...props
 }: {
   children: ReactNode;
+  onPress?: (e: any) => void;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  [key: string]: any;
 }) {
   return (
     <TouchableOpacity
-      onPress={onClick}
+      {...props}
+      onPress={onPress || onClick}
       disabled={disabled}
       activeOpacity={0.7}
       style={{

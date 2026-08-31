@@ -130,6 +130,7 @@ export default function Pay() {
         ...(draft.professionalId ? { professional_id: draft.professionalId } : {}),
         ...(draft.holdId ? { hold_id: draft.holdId } : {}),
         ...(isHome ? { is_home_service: true, service_address: draft.serviceAddress?.trim() } : {}),
+        ...(method === "wallet" ? { pay_with_wallet: true } : {}),
         ...paymentFields,
       };
       const res = await api<{ data: any }>(`/api/customer/stores/${salonId}/phase1-book/`, {
@@ -145,7 +146,11 @@ export default function Pay() {
       router.replace({ pathname: "/booking/[id]", params: { id: res.data.id } });
     } catch (err: any) {
       setLoading(false);
-      alertMessage("Booking Failed", err.message || "Could not confirm appointment.");
+      if (err instanceof ApiError && err.status === 402) {
+        alertMessage("Insufficient wallet balance", err.message || "Please top up your wallet or choose another payment method.");
+      } else {
+        alertMessage("Booking Failed", err.message || "Could not confirm appointment.");
+      }
     }
   };
 
@@ -279,11 +284,11 @@ export default function Pay() {
 
       <StickyBottomBar>
         {holdExpired ? (
-          <PrimaryButton onClick={() => goBack(`/book/${salonId}/time`)}>
+          <PrimaryButton onPress={() => goBack(`/book/${salonId}/time`)}>
             Pick another time
           </PrimaryButton>
         ) : (
-          <PrimaryButton disabled={loading} onClick={confirm}>
+          <PrimaryButton disabled={loading} onPress={confirm}>
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (

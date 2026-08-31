@@ -93,10 +93,16 @@ export default function Profile() {
         {/* User Card */}
         {isAuthed ? (
           <View style={tw`flex-row items-center gap-4`}>
-            <Avatar name={`${profile.first_name} ${profile.last_name || ""}`} size={64} />
+            <Avatar name={profile.first_name ? `${profile.first_name} ${profile.last_name || ""}` : "Demo User"} size={64} />
             <View>
-              <Text style={tw`text-[19px] font-bold text-zinc-900`}>{profile.first_name} {profile.last_name}</Text>
-              <Text style={tw`text-[13px] text-zinc-500 mt-0.5`}>{profile.email}</Text>
+              <Text style={tw`text-[19px] font-bold text-zinc-900`}>
+                {profile.first_name ? `${profile.first_name} ${profile.last_name || ""}` : "Demo User"}
+              </Text>
+              <Text style={tw`text-[13px] text-zinc-500 mt-0.5`}>
+                {profile.email?.includes("@phone.nearbyme.local") 
+                  ? `+91 ${profile.email.split("@")[0].replace(/^91/, "")}` 
+                  : profile.email}
+              </Text>
             </View>
           </View>
         ) : (

@@ -1,11 +1,15 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { api } from "./api";
 
-// Expo push tokens require a physical device (or simulator) build — there's
-// no equivalent on web, and Notifications.getExpoPushTokenAsync() would
-// throw there, so this is a deliberate no-op on Platform.OS === 'web'.
+// expo-notifications removed remote push support from Expo Go in SDK 53.
+// It throws a fatal error at MODULE LOAD TIME (not just at call time), so we
+// must avoid importing the package entirely when running inside Expo Go.
+const IS_EXPO_GO = Constants.appOwnership === "expo";
+
 export async function registerForPushNotifications(): Promise<void> {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web" || IS_EXPO_GO) return;
+
   try {
     const Notifications = await import("expo-notifications");
     const { status: existingStatus } = await Notifications.getPermissionsAsync();

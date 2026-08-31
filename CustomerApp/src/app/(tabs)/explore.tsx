@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, MapPin, SearchX, Sparkles } from "lucide-react-native";
-import { Link, router, useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import tw from "twrnc";
 import { MobileShell } from "../../components/MobileShell";
 import { Rating, EmptyState } from "../../components/primitives";
-import { StoreMap } from "../../components/StoreMap";
 import { useQuery } from "../../hooks/useFetch";
 import { color, shadow } from "../../lib/theme";
 import { photoForId } from "../../lib/photos";
@@ -96,16 +95,6 @@ export default function Explore() {
               );
             })}
           </ScrollView>
-        </View>
-
-        {/* Real map with store pins */}
-        <View style={{ ...tw`overflow-hidden rounded-3xl`, ...shadow.xs }}>
-          <StoreMap
-            stores={sortedSalons}
-            height={200}
-            center={{ lat: picked.lat, lng: picked.lng }}
-            onSelectStore={(id) => router.push({ pathname: "/salon/[id]", params: { id } })}
-          />
         </View>
 
         {/* Salon Cards */}

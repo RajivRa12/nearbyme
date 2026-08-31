@@ -93,7 +93,7 @@ export async function api<T = unknown>(path: string, opts: Options = {}): Promis
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   // Hardcoded to local network IP for Expo Go compatibility
-  const API_BASE = 'http://192.168.1.54:8000';
+  const API_BASE = 'http://10.0.2.2:8000';
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
   const res = await fetch(url, {

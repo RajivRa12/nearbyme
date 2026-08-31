@@ -275,9 +275,11 @@ class PublicStoreViewSet(viewsets.ReadOnlyModelViewSet):
         }, "Payment order created", 201)
     @action(detail=True, methods=['post'], url_path='phase1-book', permission_classes=[IsAuthenticated, IsCustomer])
     def phase1_book(self, request, pk=None):
-        from apps.core.models import GlobalCustomer, Booking, BookingStatus, BookingSource, normalize_e164
+        from decimal import Decimal
+        from django.db import transaction
+        from apps.core.models import GlobalCustomer, Booking, BookingStatus, BookingSource, normalize_e164, StoreService
         from apps.store_erp.booking_engine import confirm_booking, BookingConflictError, BookingEngineError
-        from apps.store_erp.availability import bump_availability_version
+        from apps.store_erp.availability import bump_availability_version, service_price_paise
         from .payments import verify_payment, refund_payment, PaymentsNotConfigured, PaymentVerificationError
         store = self.get_object()
         if not store.outlet_id:
@@ -286,6 +288,23 @@ class PublicStoreViewSet(viewsets.ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         slot_start = serializer.validated_data['slot_start']
         slot_end = serializer.validated_data['slot_end']
+        pay_with_wallet = serializer.validated_data.get('pay_with_wallet', False)
+        wallet = None
+        if pay_with_wallet:
+            try:
+                store_service_for_price = StoreService.objects.get(
+                    id=serializer.validated_data['store_service_id'], store_group=store.outlet.store_group
+                )
+            except StoreService.DoesNotExist:
+                return error_response("Service not found for this store.", 404)
+            expected_price_paise = service_price_paise(store_service_for_price, store.outlet)
+            wallet, _ = Wallet.objects.get_or_create(customer=request.user)
+            wallet_balance_paise = int(wallet.balance * 100)
+            if wallet_balance_paise < expected_price_paise:
+                return error_response(
+                    f"Insufficient wallet balance. You have ₹{wallet.balance}, this booking costs ₹{expected_price_paise / 100:.2f}.",
+                    402,
+                )
         hold = None
         hold_id = serializer.validated_data.get('hold_id')
         if hold_id:
@@ -347,7 +366,7 @@ class PublicStoreViewSet(viewsets.ReadOnlyModelViewSet):
         elif serializer.validated_data.get('professional_id'):
             slot_request['professional_id'] = str(serializer.validated_data['professional_id'])
         try:
-            confirm_booking(booking, [slot_request], actor=None)
+            created_slots = confirm_booking(booking, [slot_request], actor=None)
         except BookingConflictError as e:
             if online_payment:
                 # We can't hand back the slot we just charged for — refund
@@ -364,6 +383,15 @@ class PublicStoreViewSet(viewsets.ReadOnlyModelViewSet):
             }, "That time just got booked. Please pick another slot.", 200)
         except BookingEngineError as e:
             return error_response(str(e), 400)
+        if pay_with_wallet and wallet:
+            total_paise = sum(s.price_paise for s in created_slots)
+            with transaction.atomic():
+                wallet.balance -= Decimal(total_paise) / 100
+                wallet.save(update_fields=['balance'])
+                WalletTransaction.objects.create(
+                    wallet=wallet, transaction_type='DEBIT', amount=Decimal(total_paise) / 100,
+                    description=f"Booking payment - {booking.booking_code or booking.id}",
+                )
         if online_payment:
             online_payment.booking = booking
             online_payment.save(update_fields=['booking'])
