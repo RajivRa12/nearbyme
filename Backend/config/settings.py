@@ -4,6 +4,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-gcaz)x)()re4ubw+)qro1wx_ymnk%cx(&2=h2pbs$4y92v=qg^')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+CSRF_TRUSTED_ORIGINS = ['https://api.sancharitribe.com', 'https://os44ok800w8kkkkks4wwcs0s.93.127.185.74.sslip.io']
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
 MSG91_AUTH_KEY = os.environ.get('MSG91_AUTH_KEY', '')
