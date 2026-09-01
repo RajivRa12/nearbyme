@@ -665,7 +665,7 @@ def custom_get_app_list(request, app_label=None):
     app_dict = admin.site._build_app_dict(request)
     groups = {
         '🔒 1. Platform Security & Role Governance': [
-            'Internal users', 'Impersonation sessions', 'Groups'
+            'Users', 'Internal users', 'Impersonation sessions', 'Groups'
         ],
         '🏬 2. Store Groups & Branch Directory': [
             'Store groups', 'Outlets', 'Kyc documents', 'Store status histories', 'Cities', 'Zones',

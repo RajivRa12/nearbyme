@@ -100,6 +100,21 @@ class Command(BaseCommand):
             defaults={"name": "Master Admin Dev", "phone": "+919999999999", "role": InternalUserRole.SUPERADMIN, "is_active": True}
         )
         self.stdout.write(self.style.SUCCESS("✔ Seeded 3 Internal Executive Users + 'admin' superuser with admin portal access."))
+        # --- ADDED: Dummy Store Admin User ---
+        manager_user, _ = User.objects.get_or_create(
+            username="manager@nearbyme.com",
+            defaults={
+                "email": "manager@nearbyme.com",
+                "first_name": "Store",
+                "last_name": "Manager",
+                "role": Role.BRAND_OWNER,
+            }
+        )
+        manager_user.is_active = True
+        manager_user.set_password("password123")
+        manager_user.save()
+        self.stdout.write(self.style.SUCCESS("✔ Seeded Store Admin: manager@nearbyme.com / password123"))
+
         plans_data = [
             ("Pilot", 0, "monthly", 1, 3, {"custom_services": True, "sms": False}),
             ("Solo", 199900, "monthly", 1, 5, {"custom_services": True, "sms": True}),
