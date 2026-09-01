@@ -458,7 +458,7 @@ class Command(BaseCommand):
                     outlet=out_obj,
                     appointment=appt,
                     customer=c_user,
-                    grand_total=random.choice([1499.00, 2499.00, 3999.00, 4999.00, 7499.00]),
+                    grand_total_paise=random.choice([149900, 249900, 399900, 499900, 749900]),
                     status=InvoiceStatus.PAID if appt_status == AppointmentStatus.COMPLETED else InvoiceStatus.UNPAID
                 )
                 invoices_created += 1
