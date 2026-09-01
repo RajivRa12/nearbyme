@@ -47,8 +47,12 @@ def send_otp_sms(phone_e164, code):
             },
             timeout=10,
         )
-        data = send_resp.json()
-    except (requests.RequestException, ValueError) as e:
+        try:
+            data = send_resp.json()
+        except ValueError:
+            raise SMSDeliveryError(f"Message Central returned invalid JSON (Status {send_resp.status_code}): {send_resp.text[:200]}")
+            
+    except requests.RequestException as e:
         raise SMSDeliveryError(f"Could not reach Message Central API: {e}")
         
     # Check Message Central response for success
