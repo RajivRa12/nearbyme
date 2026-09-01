@@ -16,23 +16,57 @@ def send_otp_sms(phone_e164, code):
     queues first, validates credentials/template asynchronously — visible
     only in their dashboard) — a real account is needed to confirm actual
     delivery, same boundary as the Razorpay integration."""
-    if not (settings.MSG91_AUTH_KEY and settings.MSG91_OTP_TEMPLATE_ID):
-        raise SMSNotConfigured("SMS delivery is not configured yet.")
+    if not (getattr(settings, 'MESSAGE_CENTRAL_CUSTOMER_ID', None) and getattr(settings, 'MESSAGE_CENTRAL_KEY', None)):
+        raise SMSNotConfigured("Message Central SMS delivery is not configured yet. Missing Customer ID or Key.")
+    
     import requests
     mobile = phone_e164.lstrip('+')
+    
     try:
-        resp = requests.post(
-            "https://control.msg91.com/api/v5/otp",
+        # Step 1: Get Auth Token from Message Central
+        auth_resp = requests.get(
+            "https://cpaas.messagecentral.com/auth/v1/authentication/token",
             params={
-                "template_id": settings.MSG91_OTP_TEMPLATE_ID,
-                "mobile": mobile,
-                "authkey": settings.MSG91_AUTH_KEY,
-                "otp": code,
+                "customerId": settings.MESSAGE_CENTRAL_CUSTOMER_ID,
+                "key": settings.MESSAGE_CENTRAL_KEY,
+                "scope": "NEW"
             },
             timeout=10,
         )
-        data = resp.json()
+        auth_data = auth_resp.json()
+        if auth_resp.status_code != 200 or "token" not in auth_data:
+            raise SMSDeliveryError("Failed to authenticate with Message Central.")
+            
+        token = auth_data["token"]
+        
+        # Step 2: Send OTP Message
+        # Using standard SMS endpoint (or verification endpoint if required)
+        # Note: If Message Central requires a specific sender ID or template, it should be configured in settings
+        sender_id = getattr(settings, 'MESSAGE_CENTRAL_SENDER_ID', 'NRBYME')
+        message_text = f"{code} is your Nearbyme verification code. It will expire in 10 minutes."
+        
+        send_resp = requests.post(
+            "https://cpaas.messagecentral.com/sms/v1/send",
+            headers={
+                "authToken": token,
+                "Content-Type": "application/json"
+            },
+            json={
+                "customerId": settings.MESSAGE_CENTRAL_CUSTOMER_ID,
+                "messages": [
+                    {
+                        "to": [mobile],
+                        "message": message_text,
+                        "senderId": sender_id
+                    }
+                ]
+            },
+            timeout=10,
+        )
+        data = send_resp.json()
     except (requests.RequestException, ValueError) as e:
-        raise SMSDeliveryError(f"Could not reach the SMS provider: {e}")
-    if data.get('type') != 'success':
-        raise SMSDeliveryError(data.get('message') or "SMS provider rejected the request.")
+        raise SMSDeliveryError(f"Could not reach Message Central API: {e}")
+        
+    # Check Message Central response for success
+    if send_resp.status_code not in (200, 201) and data.get("status") != "Success":
+        raise SMSDeliveryError(data.get('message') or "Message Central rejected the request.")
