@@ -36,18 +36,18 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'phone')}),
-        ('Salon/Spa Context', {'fields': ('role', 'brand', 'store')}),
+        ('Salon/Spa Context', {'fields': ('role', 'brand', 'store', 'outlet')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'role', 'brand', 'store'),
+            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'role', 'brand', 'store', 'outlet'),
         }),
     )
-    list_display = ('email', 'first_name', 'last_name', 'role', 'brand', 'store', 'is_active', 'is_staff')
-    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'brand', 'store')
+    list_display = ('email', 'first_name', 'last_name', 'role', 'brand', 'store', 'outlet', 'is_active', 'is_staff')
+    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'brand', 'store', 'outlet')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
 @admin.register(Business)
