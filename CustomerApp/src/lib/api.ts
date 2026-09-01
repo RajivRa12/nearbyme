@@ -92,8 +92,8 @@ export async function api<T = unknown>(path: string, opts: Options = {}): Promis
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Hardcoded to local network IP for Expo Go compatibility
-  const API_BASE = 'http://10.0.2.2:8000';
+  // Pointing to Production Backend
+  const API_BASE = 'https://api.sancharitribe.com';
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
   const res = await fetch(url, {
