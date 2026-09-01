@@ -8,7 +8,7 @@ CSRF_TRUSTED_ORIGINS = ['https://api.sancharitribe.com', 'https://os44ok800w8kkk
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
 MESSAGE_CENTRAL_CUSTOMER_ID = os.environ.get('MESSAGE_CENTRAL_CUSTOMER_ID', '')
-MESSAGE_CENTRAL_KEY = os.environ.get('MESSAGE_CENTRAL_KEY', '')
+MESSAGE_CENTRAL_AUTH_TOKEN = os.environ.get('MESSAGE_CENTRAL_AUTH_TOKEN', '')
 MESSAGE_CENTRAL_SENDER_ID = os.environ.get('MESSAGE_CENTRAL_SENDER_ID', 'NRBYME')
 INSTALLED_APPS = [
     'jazzmin',

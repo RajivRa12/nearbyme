@@ -16,32 +16,16 @@ def send_otp_sms(phone_e164, code):
     queues first, validates credentials/template asynchronously — visible
     only in their dashboard) — a real account is needed to confirm actual
     delivery, same boundary as the Razorpay integration."""
-    if not (getattr(settings, 'MESSAGE_CENTRAL_CUSTOMER_ID', None) and getattr(settings, 'MESSAGE_CENTRAL_KEY', None)):
-        raise SMSNotConfigured("Message Central SMS delivery is not configured yet. Missing Customer ID or Key.")
+    if not (getattr(settings, 'MESSAGE_CENTRAL_CUSTOMER_ID', None) and getattr(settings, 'MESSAGE_CENTRAL_AUTH_TOKEN', None)):
+        raise SMSNotConfigured("Message Central SMS delivery is not configured yet. Missing Customer ID or Auth Token.")
     
     import requests
     mobile = phone_e164.lstrip('+')
     
     try:
-        # Step 1: Get Auth Token from Message Central
-        auth_resp = requests.get(
-            "https://cpaas.messagecentral.com/auth/v1/authentication/token",
-            params={
-                "customerId": settings.MESSAGE_CENTRAL_CUSTOMER_ID,
-                "key": settings.MESSAGE_CENTRAL_KEY,
-                "scope": "NEW"
-            },
-            timeout=10,
-        )
-        auth_data = auth_resp.json()
-        if auth_resp.status_code != 200 or "token" not in auth_data:
-            raise SMSDeliveryError("Failed to authenticate with Message Central.")
-            
-        token = auth_data["token"]
+        token = settings.MESSAGE_CENTRAL_AUTH_TOKEN
         
-        # Step 2: Send OTP Message
-        # Using standard SMS endpoint (or verification endpoint if required)
-        # Note: If Message Central requires a specific sender ID or template, it should be configured in settings
+        # Send OTP Message
         sender_id = getattr(settings, 'MESSAGE_CENTRAL_SENDER_ID', 'NRBYME')
         message_text = f"{code} is your Nearbyme verification code. It will expire in 10 minutes."
         
