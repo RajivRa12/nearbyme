@@ -3,7 +3,7 @@ const TOKEN_KEY = "admin_token";
 // lib/auth.tsx), its id is sent as X-Store-Id on every request so the
 // backend can scope store_erp queries to it for that request only.
 const STORE_CONTEXT_KEY = "admin_current_store_id";
-export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_BASE = "https://api.sancharitribe.com";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
