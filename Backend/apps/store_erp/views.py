@@ -55,6 +55,10 @@ class StaffViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return User.objects.filter(store=self.request.user.store, role__in=[Role.RECEPTIONIST, Role.THERAPIST, Role.STORE_ADMIN])
     def perform_create(self, serializer):
+        # Force email to lowercase to prevent case-sensitive login issues
+        if 'email' in serializer.validated_data:
+            serializer.validated_data['email'] = serializer.validated_data['email'].lower()
+            
         user = serializer.save(
             store=self.request.user.store,
             brand=self.request.user.brand,
