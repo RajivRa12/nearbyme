@@ -1,6 +1,7 @@
 // Simple in-memory location preference store (frontend-only — the backend
 // doesn't have structured country/state/city data to filter by yet).
 import { useSyncExternalStore } from "react";
+import * as Location from "expo-location";
 
 export type LocationOption = { country: string; state: string; city: string; lat: number; lng: number };
 type CityOption = { name: string; lat: number; lng: number };
@@ -118,4 +119,39 @@ export function useLocation(): LocationOption {
     () => current,
     () => current,
   );
+}
+
+export type DetectLocationResult = { status: "granted" | "denied" | "error"; message?: string };
+
+/** Requests device location permission, reads the current GPS position, and
+ * reverse-geocodes it to a human-readable city/region/country — replacing
+ * the manually-picked default rather than snapping to the nearest entry in
+ * the static LOCATIONS list, so distance-based "nearby" sorting stays accurate. */
+export async function detectCurrentLocation(): Promise<DetectLocationResult> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      return { status: "denied", message: "Location permission was not granted." };
+    }
+    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    const { latitude: lat, longitude: lng } = position.coords;
+    let city = "Current location";
+    let state = "";
+    let country = "";
+    try {
+      const [place] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (place) {
+        city = place.city || place.subregion || place.district || city;
+        state = place.region || "";
+        country = place.country || "";
+      }
+    } catch {
+      // Reverse geocoding can fail independently of the GPS fix (e.g. no
+      // network) — still use the real coordinates with a generic label.
+    }
+    setLocation({ country, state, city, lat, lng });
+    return { status: "granted" };
+  } catch (e: any) {
+    return { status: "error", message: e?.message || "Could not detect your location." };
+  }
 }

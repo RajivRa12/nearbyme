@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { getToken } from '../lib/api';
 import { registerForPushNotifications } from '../lib/pushNotifications';
+import { detectCurrentLocation } from '../lib/locationState';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -41,6 +42,12 @@ export default function RootLayout() {
       registerForPushNotifications();
     }
   }, [isAuthenticated]);
+
+  // Best-effort: silently falls back to the default location on denial or
+  // error (see detectCurrentLocation) — never blocks app startup.
+  useEffect(() => {
+    detectCurrentLocation();
+  }, []);
 
   if (isAuthenticated === null) {
     return null; // Don't render until auth is checked

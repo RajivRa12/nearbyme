@@ -1,9 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Home, Compass, Calendar, User } from 'lucide-react-native';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color } from '@/lib/theme';
 
+// React Navigation's own default bottom-tab bar reserves 49dp for the
+// icon+label row (TABBAR_HEIGHT_UIKIT) with no separate top padding. We add
+// a 10dp paddingTop for visual breathing room on top of that same budget —
+// so the content height must be 49 + 10, not 49 alone, or the extra
+// paddingTop eats into the icon/label's own space and clips the label.
+// insets.bottom (the device's real nav-bar/home-indicator height) is added
+// on top of this fixed content height, never folded into it.
+const TAB_BAR_CONTENT_HEIGHT = 59;
+// Pure visual breathing room below the tab bar's own content, on top of
+// whatever the device's real safe-area inset already requires — without
+// this the bar sits flush against the system nav bar with zero gap.
+const TAB_BAR_EXTRA_BOTTOM_GAP = 10;
+
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 10) + TAB_BAR_EXTRA_BOTTOM_GAP;
   return (
     <Tabs
       screenOptions={{
@@ -14,9 +29,9 @@ export default function TabLayout() {
           backgroundColor: color.bg,
           borderTopWidth: 1,
           borderTopColor: color.line,
-          paddingBottom: Platform.OS === 'ios' ? 26 : 14,
+          paddingBottom: bottomInset,
           paddingTop: 10,
-          height: Platform.OS === 'ios' ? 88 : 66,
+          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
           position: 'absolute',
           bottom: 0,
           left: 0,
